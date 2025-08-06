@@ -1,0 +1,22 @@
+{% extends 'court/base.html' %}
+
+{% block content %}
+    <h2>Mevcut Rezervasyonlar</h2>
+
+
+
+    {% if reservations %}
+        <ul>
+            {% for r in reservations %}
+                <li>
+                    {{ r.user.full_name }} - {{ r.date }} - {{ r.time_slot }}
+                    {% if user == r.user or user.is_superuser %}
+                        | <a href="{% url 'cancel_reservation' r.id %}">İptal Et</a>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Son 24 saat içinde yapılmış rezervasyon yok.</p>
+    {% endif %}
+{% endblock %}

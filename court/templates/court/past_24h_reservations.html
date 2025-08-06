@@ -1,0 +1,34 @@
+{% extends 'court/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center mb-4">Son 24 Saatteki Geçmiş Rezervasyonlar</h2>
+
+    {% if reservations %}
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered table-hover align-middle">
+                <thead class="table-success text-center">
+                    <tr>
+                        <th>Kullanıcı</th>
+                        <th>Tarih</th>
+                        <th>Saat Aralığı</th>
+                        <th>Oluşturulma</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in reservations %}
+                        <tr class="text-center">
+                            <td>{{ r.user.full_name }}</td>
+                            <td>{{ r.date }}</td>
+                            <td>{{ r.time_slot }}</td>
+                            <td>{{ r.created_at|default:"-"|date:"d M Y H:i" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="text-center text-muted">Son 24 saatte geçmiş rezervasyon bulunamadı.</p>
+    {% endif %}
+</div>
+{% endblock %}

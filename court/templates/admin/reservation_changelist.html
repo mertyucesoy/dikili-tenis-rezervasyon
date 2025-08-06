@@ -1,0 +1,25 @@
+{% extends "admin/change_list.html" %}
+{% load static %}
+
+{% block content %}
+  <div style="margin-bottom: 2rem; padding: 1rem; background-color: #1e1e1e; border: 1px solid #444; color: white;">
+    <h2 style="color: #61dafb;">📊 Rezervasyon İstatistikleri</h2>
+    <p><strong>Toplam Rezervasyon:</strong> {{ total_reservations }}</p>
+
+    <h3 style="color: #ffcc00;">👥 En Aktif 5 Kullanıcı</h3>
+    <ul>
+      {% for user in top_users %}
+        <li>{{ user.user__full_name }} – {{ user.count }} rezervasyon</li>
+      {% endfor %}
+    </ul>
+
+    <h3 style="color: #ff9966;">🕒 En Popüler 5 Saat Aralığı</h3>
+    <ul>
+      {% for slot in popular_slots %}
+        <li>{{ slot.time_slot }} – {{ slot.count }} rezervasyon</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  {{ block.super }}
+{% endblock %}

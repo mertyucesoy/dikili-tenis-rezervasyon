@@ -1,0 +1,9 @@
+<h2>All Reservations</h2>
+<ul>
+    {% for r in reservations %}
+        <li>{{ r.date }} {{ r.time_slot }} - {{ r.name }}</li>
+    {% empty %}
+        <li>No reservations found.</li>
+    {% endfor %}
+</ul>
+<a href="/">Back to Home</a>
