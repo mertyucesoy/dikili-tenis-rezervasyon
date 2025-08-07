@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: tennis-reservation
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn tennis_reservation.wsgi:application"
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: tennis_reservation.settings
+      - key: PYTHON_VERSION
+        value: 3.10
