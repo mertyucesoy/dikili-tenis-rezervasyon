@@ -6,7 +6,7 @@ SECRET_KEY = 'django-insecure-5af(hnr^^+nl+2g4((^ha1z1#6#q84-k2@y)pd5%^%4$92^e14
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'dikili-tenis-rezervasyon.onrender.com']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'dikili-tenis-rezervasyon.onrender.com', 'dikili-tenis-rezervasyon.pythonanywhere.com']
 
 # Uygulamalar
 INSTALLED_APPS = [
