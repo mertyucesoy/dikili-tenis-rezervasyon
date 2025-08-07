@@ -26,14 +26,26 @@ def home(request):
         'reservations': upcoming_reservations
     })
 
+from datetime import date, datetime, timedelta
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import Reservation
+from django.utils import timezone
 
 @login_required
+
 def reserve(request):
     today = date.today()
     today_str = today.isoformat()
     selected_date_str = request.GET.get('date', today_str)
     selected_date = datetime.strptime(selected_date_str, "%Y-%m-%d").date()
 
+    # ❗ Geçmiş tarih kontrolü (kritik)
+    if selected_date < today:
+        messages.error(request, "Geçmiş bir tarih için rezervasyon yapılamaz.")
+        return redirect('reserve')
+
+    # 48 saat sınırı kontrolü
     max_date = today + timedelta(days=2)
     if selected_date > max_date:
         messages.error(request, "En fazla 48 saat sonrasına rezervasyon yapılabilir.")
@@ -69,7 +81,6 @@ def reserve(request):
         'user_locked': user_has_reservation,
         'max_date': max_date.isoformat()
     })
-
 
 def admin_view(request):
     reservations = Reservation.objects.all().order_by('date', 'time_slot')
@@ -114,31 +125,28 @@ def past_24h_reservations(request):
         'reservations': past_reservations
     })
 
+from django.db import IntegrityError
 def register(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
-            # 1. Kullanıcıyı geçici olarak oluştur
             user = form.save(commit=False)
-
-            # 2. Doğrulama ve pasiflik ayarları
             user.is_active = False
             user.is_verified = False
             user.verification_code = get_random_string(6, allowed_chars='0123456789')
             user.code_expiry = timezone.now() + timezone.timedelta(minutes=10)
-
-            # 3. Şifreyi al (ileride session’a koyacağız)
             raw_password = form.cleaned_data.get("password1")
 
-            # 4. Veritabanına kaydet → artık ID var
-            user.save()
+            try:
+                user.save()
+            except IntegrityError:
+                form.add_error('email', 'Bu e-posta adresi zaten kullanılıyor.')
+                return render(request, 'court/register.html', {'form': form})
 
-            # 5. Serializasyona geç → artık hata vermez
             user_json = serializers.serialize('json', [user])
             request.session['pending_user'] = user_json
             request.session['plain_password'] = raw_password
 
-            # 6. Mail gönder
             send_mail(
                 subject='Email Doğrulama Kodu',
                 message=f'Doğrulama kodunuz: {user.verification_code}',

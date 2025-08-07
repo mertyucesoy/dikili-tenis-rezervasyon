@@ -54,17 +54,27 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/tr.js"></script>
 
 <script>
-  flatpickr("#datepicker", {
-    dateFormat: "Y-m-d",              // Sistem için gönderilecek format
-    altInput: true,                   // Kullanıcıya farklı format göster
-    altFormat: "d F Y",               // Kullanıcıya görünen format (örnek: 25 Ocak 2025)
-    defaultDate: "{{ selected_date }}",
-    minDate: "{{ today }}",
-    maxDate: "{{ max_date }}",
-    locale: "tr",
-    onChange: function(selectedDates, dateStr, instance) {
-      instance.element.form.submit();
-    }
+  document.addEventListener("DOMContentLoaded", function () {
+    flatpickr("#datepicker", {
+      dateFormat: "Y-m-d",              // sistem formatı
+      altInput: true,
+      altFormat: "d F Y",               // kullanıcıya görünen format
+      defaultDate: "{{ selected_date }}",
+      minDate: "{{ today }}",           // bugün
+      maxDate: "{{ max_date }}",        // 2 gün sonrası
+      locale: "tr",
+      disable: [
+        function(date) {
+          // saat 00:00'dan önceki tarihleri devre dışı bırak
+          const today = new Date();
+          today.setHours(0,0,0,0);
+          return date < today;
+        }
+      ],
+      onChange: function(selectedDates, dateStr, instance) {
+        instance.element.form.submit();
+      }
+    });
   });
 </script>
 
