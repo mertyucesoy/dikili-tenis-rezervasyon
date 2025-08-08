@@ -1,9 +1,11 @@
 services:
   - type: web
-    name: tennis-reservation
+    name: dikili-tenis-rezervasyon
     env: python
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "gunicorn tennis_reservation.wsgi:application"
+    buildCommand: ./build.sh
+    startCommand: gunicorn tennis_reservation.wsgi:application
+    staticPublishPath: staticfiles
+    staticPublishUrl: /static
     envVars:
       - key: DJANGO_SETTINGS_MODULE
         value: tennis_reservation.settings
