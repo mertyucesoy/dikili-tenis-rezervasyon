@@ -1,90 +1,65 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Reservation, CustomUser
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, logout, authenticate, get_backends
-from .forms import CustomUserCreationForm
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.mail import send_mail
-from django.utils.crypto import get_random_string
 from django.utils import timezone
-from django.conf import settings
-from datetime import date, datetime, timedelta
+from django.utils.crypto import get_random_string
 from django.core import serializers
-from django.utils.timezone import make_aware, is_naive
+from django.db import IntegrityError
+from django.conf import settings
 
+from .models import Reservation, CustomUser
+from .forms import CustomUserCreationForm
 
+from datetime import datetime, timedelta, date
 
 
 @login_required
 def home(request):
     today = timezone.localdate()
-    upcoming_reservations = Reservation.objects.filter(
-        date__gte=today
-    ).order_by('date', 'time_slot')
+    reservations = Reservation.objects.filter(date__gte=today).order_by('date', 'time_slot')
+    return render(request, 'court/home.html', {'reservations': reservations})
 
-    return render(request, 'court/home.html', {
-        'reservations': upcoming_reservations
-    })
-
-from datetime import date, datetime, timedelta
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from .models import Reservation
-from django.utils import timezone
 
 @login_required
-
 def reserve(request):
     today = date.today()
-    today_str = today.isoformat()
-    selected_date_str = request.GET.get('date', today_str)
+    selected_date_str = request.GET.get('date', today.isoformat())
     selected_date = datetime.strptime(selected_date_str, "%Y-%m-%d").date()
 
-    # ❗ Geçmiş tarih kontrolü (kritik)
     if selected_date < today:
         messages.error(request, "Geçmiş bir tarih için rezervasyon yapılamaz.")
         return redirect('reserve')
 
-    # 48 saat sınırı kontrolü
-    max_date = today + timedelta(days=2)
-    if selected_date > max_date:
+    if selected_date > today + timedelta(days=2):
         messages.error(request, "En fazla 48 saat sonrasına rezervasyon yapılabilir.")
         return redirect('home')
+
+    all_slots = [(f"{h:02d}:00 - {((h + 1) % 24):02d}:00") for h in range(6, 24)]
+    if selected_date == datetime.today().date():
+        all_slots = [slot for slot in all_slots if int(slot[:2]) > datetime.now().hour]
 
     reserved_slots = Reservation.objects.filter(date=selected_date).values_list('time_slot', flat=True)
     user_has_reservation = Reservation.objects.filter(user=request.user, date__gte=timezone.localdate()).exists()
 
-    all_slots = [(f"{h:02d}:00 - {((h + 1) % 24):02d}:00") for h in range(6, 24)]
-
-    now = datetime.now()
-    if selected_date == now.date():
-        current_hour = now.hour
-        if now.minute > 0:
-            current_hour += 1
-        all_slots = [slot for slot in all_slots if int(slot.split(":")[0]) >= current_hour]
-
     if request.method == 'POST':
         if user_has_reservation:
-            messages.error(request, "Bu tarih için zaten bir rezervasyonunuz var.")
+            messages.error(request, "Zaten bir rezervasyonunuz var.")
         else:
-            date_input = request.POST['date']
-            time_slot = request.POST['time_slot']
-            Reservation.objects.create(user=request.user, date=date_input, time_slot=time_slot)
-            messages.success(request, "Rezervasyon başarıyla oluşturuldu.")
+            time_slot = request.POST.get('time_slot')
+            Reservation.objects.create(user=request.user, date=selected_date, time_slot=time_slot)
+            messages.success(request, "Rezervasyon oluşturuldu.")
             return redirect('home')
 
     return render(request, 'court/reserve.html', {
         'all_slots': all_slots,
         'reserved_slots': reserved_slots,
-        'today': today_str,
         'selected_date': selected_date_str,
+        'today': today.isoformat(),
+        'max_date': (today + timedelta(days=2)).isoformat(),
         'user_locked': user_has_reservation,
-        'max_date': max_date.isoformat()
     })
-
-def admin_view(request):
-    reservations = Reservation.objects.all().order_by('date', 'time_slot')
-    return render(request, 'court/admin.html', {'reservations': reservations})
 
 
 @login_required
@@ -95,56 +70,46 @@ def cancel_reservation(request, reservation_id):
     return redirect('home')
 
 
-# ✅ DÜZENLİ: Geçmiş rezervasyonları gösteren view
 def past_24h_reservations(request):
     now = timezone.localtime()
     yesterday = now - timedelta(days=1)
-
-    past_reservations = []
+    results = []
 
     for res in Reservation.objects.all():
         try:
-            start_str, end_str = res.time_slot.split(" - ")
+            _, end_str = res.time_slot.split(" - ")
             end_hour, end_minute = map(int, end_str.split(":"))
-
-            # Eğer bitiş saati gece 00:00 ise → tarihi 1 gün artır
-            reservation_date = res.date
+            end_time = datetime.combine(res.date, datetime.min.time()).replace(hour=end_hour, minute=end_minute)
             if end_hour == 0 and end_minute == 0:
-                reservation_date += timedelta(days=1)
-
-            # Bitiş zamanını oluştur ve aware yap
-            naive_end = datetime.combine(reservation_date, datetime.min.time()).replace(hour=end_hour, minute=end_minute)
-            aware_end = timezone.make_aware(naive_end)
-
+                end_time += timedelta(days=1)
+            aware_end = timezone.make_aware(end_time)
             if yesterday <= aware_end <= now:
-                past_reservations.append(res)
-        except Exception:
+                results.append(res)
+        except:
             continue
 
-    return render(request, 'court/past_24h_reservations.html', {
-        'reservations': past_reservations
-    })
+    return render(request, 'court/past_24h_reservations.html', {'reservations': results})
 
-from django.db import IntegrityError
+
 def register(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
+            email = form.cleaned_data['email']
+            if CustomUser.objects.filter(email=email).exists():
+                form.add_error('email', 'Bu e-posta adresi zaten kullanılıyor.')
+                return render(request, 'court/register.html', {'form': form})
+
             user = form.save(commit=False)
             user.is_active = False
             user.is_verified = False
             user.verification_code = get_random_string(6, allowed_chars='0123456789')
-            user.code_expiry = timezone.now() + timezone.timedelta(minutes=10)
+            user.code_expiry = timezone.now() + timedelta(minutes=10)
             raw_password = form.cleaned_data.get("password1")
 
-            try:
-                user.save()
-            except IntegrityError:
-                form.add_error('email', 'Bu e-posta adresi zaten kullanılıyor.')
-                return render(request, 'court/register.html', {'form': form})
+            user.save()
 
-            user_json = serializers.serialize('json', [user])
-            request.session['pending_user'] = user_json
+            request.session['pending_user'] = serializers.serialize('json', [user])
             request.session['plain_password'] = raw_password
 
             send_mail(
@@ -161,9 +126,10 @@ def register(request):
 
     return render(request, 'court/register.html', {'form': form})
 
+
 def login_view(request):
     if request.method == 'POST':
-        username = request.POST.get('username')  # 👈 Email burada 'username' adıyla alınmalı
+        username = request.POST.get('username')  # input adı 'username' olmalı
         password = request.POST.get('password')
         user = authenticate(request, username=username, password=password)
 
@@ -179,7 +145,6 @@ def login_view(request):
     return render(request, 'court/login.html')
 
 
-
 def logout_view(request):
     logout(request)
     return redirect('login')
@@ -192,14 +157,14 @@ def verify_email(request):
         raw_password = request.session.get("plain_password")
 
         if not user_json:
-            messages.error(request, "Kayıt bilgisi bulunamadı. Lütfen yeniden kayıt olun.")
+            messages.error(request, "Kayıt bilgisi bulunamadı.")
             return redirect("register")
 
         user_data = list(serializers.deserialize('json', user_json))[0]
         user = user_data.object
 
         if timezone.now() > user.code_expiry:
-            messages.error(request, "Kodun süresi doldu. Lütfen tekrar kayıt olun.")
+            messages.error(request, "Kodun süresi doldu.")
             request.session.flush()
             return redirect("register")
 
@@ -209,11 +174,8 @@ def verify_email(request):
             user.is_verified = True
             user.save()
 
-            backend = get_backends()[0]
             login(request, user, backend='tennis_reservation.backends.EmailBackend')
-
             request.session.flush()
-            messages.success(request, "E-posta doğrulandı.")
             return redirect("home")
         else:
             messages.error(request, "Kod yanlış.")
