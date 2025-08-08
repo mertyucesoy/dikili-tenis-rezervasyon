@@ -163,9 +163,9 @@ def register(request):
 
 def login_view(request):
     if request.method == 'POST':
-        email = request.POST.get('email')
+        username = request.POST.get('username')  # 👈 email değil
         password = request.POST.get('password')
-        user = authenticate(request, username=email, password=password)  # <-- email değil, username
+        user = authenticate(request, username=username, password=password)
 
         if user is not None:
             if user.is_verified or user.is_superuser:
