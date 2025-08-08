@@ -163,7 +163,7 @@ def register(request):
 
 def login_view(request):
     if request.method == 'POST':
-        username = request.POST.get('username')  # 👈 email değil
+        username = request.POST.get('username')  # 👈 Email burada 'username' adıyla alınmalı
         password = request.POST.get('password')
         user = authenticate(request, username=username, password=password)
 
@@ -177,7 +177,6 @@ def login_view(request):
             messages.error(request, 'Geçersiz e-posta veya şifre.')
 
     return render(request, 'court/login.html')
-
 
 
 
