@@ -161,12 +161,11 @@ def register(request):
 
     return render(request, 'court/register.html', {'form': form})
 
-
 def login_view(request):
     if request.method == 'POST':
         email = request.POST.get('email')
         password = request.POST.get('password')
-        user = authenticate(request, email=email, password=password)
+        user = authenticate(request, username=email, password=password)  # <-- email değil, username
 
         if user is not None:
             if user.is_verified or user.is_superuser:
@@ -178,6 +177,7 @@ def login_view(request):
             messages.error(request, 'Geçersiz e-posta veya şifre.')
 
     return render(request, 'court/login.html')
+
 
 
 
