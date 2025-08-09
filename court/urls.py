@@ -13,6 +13,8 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('verify/', views.verify_email, name='verify_email'),
+    path('create-admin/', views.create_admin),
+
 
     # ⏳ Geçmiş rezervasyonlar
     path('past-reservations/', views.past_24h_reservations, name='past_24h_reservations'),

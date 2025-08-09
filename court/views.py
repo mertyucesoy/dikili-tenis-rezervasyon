@@ -16,6 +16,22 @@ from datetime import datetime, timedelta, date
 from django.contrib.admin.views.decorators import staff_member_required
 
 
+from django.http import HttpResponse
+from django.contrib.auth import get_user_model
+
+def create_admin(request):
+    User = get_user_model()
+    email = "yucesoymert@hotmail.com"
+    if not User.objects.filter(email=email).exists():
+        user = User.objects.create_superuser(
+            email=email,
+            full_name="Mert Yücesoy",
+            age=25,
+            phone="05356626319",
+            password="AdminSifre123"
+        )
+        return HttpResponse("Superuser oluşturuldu.")
+    return HttpResponse("Bu email ile kullanıcı zaten var.")
 
 @login_required
 def home(request):
