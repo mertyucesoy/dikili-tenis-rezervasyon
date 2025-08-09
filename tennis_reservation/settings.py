@@ -115,7 +115,6 @@ EMAIL_TIMEOUT = 20
 
 # --- Auth backends (email ile giriş) ---
 AUTHENTICATION_BACKENDS = [
-    "tennis_reservation.backends.EmailBackend",
     "django.contrib.auth.backends.ModelBackend",
 ]
 # --- Güvenlik: production'da https proxy + cookie güvenliği ---
