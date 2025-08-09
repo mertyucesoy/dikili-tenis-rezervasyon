@@ -1,7 +1,7 @@
 <h2>All Reservations</h2>
 <ul>
     {% for r in reservations %}
-        <li>{{ r.date }} {{ r.time_slot }} - {{ r.name }}</li>
+    <li>{{ r.date }} {{ r.time_slot }} - {{ r.user.full_name }}</li>
     {% empty %}
         <li>No reservations found.</li>
     {% endfor %}

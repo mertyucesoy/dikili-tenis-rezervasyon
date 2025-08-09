@@ -6,7 +6,6 @@ urlpatterns = [
     # 🏠 Ana sayfa ve temel işlemler
     path('', views.home, name='home'),
     path('reserve/', views.reserve, name='reserve'),
-    path('admin-view/', views.admin_view, name='admin_view'),
     path('cancel/<int:reservation_id>/', views.cancel_reservation, name='cancel_reservation'),
 
     # 👤 Kullanıcı işlemleri
