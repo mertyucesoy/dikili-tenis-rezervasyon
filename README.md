@@ -19,6 +19,12 @@ Dikili'deki tenis kortu için geliştirilmiş, gerçek kullanıcılara hizmet ve
 
 *Görüntülerdeki kullanıcılar ve rezervasyonlar demo verisidir.*
 
+## Neden yaptım
+
+Kortta rezervasyonlar bir WhatsApp grubu üzerinden yapılıyordu. Herkes oynayacağı saati gruba yazıyordu, ama yukarıda kalan mesajlar gözden kaçınca aynı saate iki kişi yazabiliyordu. Bu çakışmalar grupta tartışmalara yol açıyordu.
+
+Bu sistemle dolu ve boş saatler tek ekranda görünüyor, aynı saat iki kez alınamıyor ve kişi başı tek aktif rezervasyon kuralıyla kortun adil paylaşımı sağlanıyor.
+
 ## Özellikler
 
 - E-posta ile kayıt ve 6 haneli doğrulama kodu
